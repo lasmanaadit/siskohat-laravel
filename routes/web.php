@@ -21,24 +21,7 @@ Route::get('/login', function () {
     return view('login');
 })->name('login');
 
-Route::post('/login', function (Request $request) {
-    $request->validate([
-        'email' => 'required|email',
-        'password' => 'required',
-    ]);
-
-    if (Auth::attempt(['email' => $request->email, 'password' => $request->password], $request->remember)) {
-        $request->session()->regenerate();
-        $user = Auth::user();
-        if ($user->role === 'admin') {
-            return redirect('/admin');
-        }
-        return redirect('/index');
-    }
-
-    return back()->withErrors(['email' => 'Email atau password salah.']);
-})->name('login.submit');
-
+// ============ LOGOUT (TAMBAHKAN INI) ============
 Route::post('/logout', function (Request $request) {
     Auth::logout();
     $request->session()->invalidate();
@@ -46,10 +29,12 @@ Route::post('/logout', function (Request $request) {
     return redirect('/login');
 })->name('logout');
 
+// ============ REGISTER ============
 Route::get('/register', function () {
     return view('register');
 })->name('register');
 
+// ============ INDEX ============
 Route::get('/index', function () {
     $beritas = Berita::where('jenis', 'terkini')->latest()->get();
     $beritasLainnya = Berita::where('jenis', 'lainnya')->latest()->get();
@@ -59,14 +44,8 @@ Route::get('/index', function () {
     return view('index', compact('beritas', 'beritasLainnya', 'paketHaji', 'paketUmrah'));
 })->name('index');
 
-// ============ ADMIN ============
+// ============ ADMIN (TANPA MIDDLEWARE) ============
 Route::get('/admin', function () {
-    if (!Auth::check()) {
-        return redirect('/login')->with('error', 'Silakan login dulu');
-    }
-    if (Auth::user()->role !== 'admin') {
-        return redirect('/index')->with('error', 'Anda bukan admin');
-    }
     return view('admin');
 })->name('admin');
 
@@ -92,7 +71,6 @@ Route::get('/detailpaketumrah', function () {
     return view('detailpaketumrah', compact('paketUmrah'));
 })->name('detailpaketumrah');
 
-// Detail per paket
 Route::get('/paket-detail/{id}', function ($id) {
     $paket = Paket::findOrFail($id);
     return view('paket-detail', compact('paket'));

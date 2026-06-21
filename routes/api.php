@@ -28,25 +28,20 @@ Route::get('/profil', [ProfilController::class, 'index']);
 
 // ============ ROUTE ADMIN ============
 Route::middleware(['auth:sanctum', IsAdmin::class])->group(function () {
-    // BERITA
     Route::post('/berita', [BeritaController::class, 'store']);
     Route::put('/berita/{id}', [BeritaController::class, 'update']);
     Route::delete('/berita/{id}', [BeritaController::class, 'destroy']);
 
-    // PAKET
     Route::post('/paket', [PaketController::class, 'store']);
     Route::put('/paket/{id}', [PaketController::class, 'update']);
     Route::delete('/paket/{id}', [PaketController::class, 'destroy']);
 
-    // PROFIL
     Route::post('/profil', [ProfilController::class, 'store']);
     Route::delete('/profil/{id}', [ProfilController::class, 'destroy']);
 
-    // SLIDER
     Route::post('/slider', [SliderController::class, 'store']);
     Route::delete('/slider/{id}', [SliderController::class, 'destroy']);
 
-    // VIDEO PANDUAN
     Route::post('/video-panduan', [VideoPanduanController::class, 'store']);
     Route::delete('/video-panduan/{id}', [VideoPanduanController::class, 'destroy']);
 });
@@ -73,6 +68,7 @@ Route::post('/register', function (Request $request) {
     }
 })->middleware('throttle:5,1');
 
+// ===== LOGIN (PASTI WORK) =====
 Route::post('/login', function (Request $request) {
     try {
         $request->validate([
@@ -82,9 +78,16 @@ Route::post('/login', function (Request $request) {
 
         $user = User::where('email', $request->email)->first();
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json(['message' => 'Email atau password salah'], 401);
+        if (!$user) {
+            return response()->json(['message' => 'User tidak ditemukan'], 401);
         }
+
+        if (!Hash::check($request->password, $user->password)) {
+            return response()->json(['message' => 'Password salah'], 401);
+        }
+
+        // Hapus token lama jika ada
+        $user->tokens()->delete();
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -101,7 +104,7 @@ Route::post('/login', function (Request $request) {
     } catch (\Exception $e) {
         return response()->json(['message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
     }
-})->middleware('throttle:10,1');
+});
 
 Route::post('/logout', function (Request $request) {
     try {
